@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { collection, query, orderBy } from 'firebase/firestore';
-import { History, BookOpenCheck, Home } from 'lucide-react';
+import { History, BookOpenCheck, Home, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
@@ -66,16 +66,20 @@ export default function HistoryPage() {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="font-headline text-xl">
-                    Quiz from {format(new Date(attempt.completedAt), "MMMM d, yyyy 'at' h:mm a")}
+                  <CardTitle className="font-headline text-xl flex items-center gap-2">
+                     <FileText className="h-5 w-5 text-muted-foreground" />
+                    {attempt.topic}
                   </CardTitle>
-                  <CardDescription>
-                    Score: {attempt.score} / {attempt.total}
+                  <CardDescription className="pt-2">
+                    Taken on {format(new Date(attempt.completedAt), "MMMM d, yyyy")}
                   </CardDescription>
                 </div>
-                 <Button variant="outline" size="sm" asChild>
-                    <Link href={`/history/${attempt.id}`}>View Details</Link>
-                </Button>
+                 <div className="text-right">
+                     <div className="text-lg font-semibold">{attempt.score} / {attempt.total}</div>
+                      <Button variant="outline" size="sm" asChild className="mt-2">
+                        <Link href={`/history/${attempt.id}`}>View Details</Link>
+                    </Button>
+                 </div>
               </div>
             </CardHeader>
           </Card>

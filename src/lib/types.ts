@@ -10,6 +10,7 @@ export type UserAnswer = string | null;
 export type QuizAttempt = {
   id: string;
   userId: string;
+  topic: string;
   questions: Question[];
   userAnswers: UserAnswer[];
   score: number;

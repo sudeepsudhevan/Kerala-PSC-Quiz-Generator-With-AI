@@ -14,6 +14,7 @@ import {z} from 'genkit';
 const GenerateKeralaPscQuestionsInputSchema = z.object({
   topic: z.string().describe('The topic for which to generate questions.'),
   numQuestions: z.number().describe('The number of questions to generate.'),
+  excludeQuestions: z.array(z.string()).optional().describe('A list of question texts to exclude from the generation.'),
 });
 export type GenerateKeralaPscQuestionsInput = z.infer<typeof GenerateKeralaPscQuestionsInputSchema>;
 
@@ -44,7 +45,14 @@ const prompt = ai.definePrompt({
 Topic: {{{topic}}}
 Number of Questions: {{{numQuestions}}}
 
-Output the questions in JSON format, including the question text, options, correct answer, and a brief explanation for each question.  Make sure that the correct answer is one of the options provided.  Explanations are optional.
+{{#if excludeQuestions}}
+IMPORTANT: Do not generate any of the following questions. These have been asked before:
+{{#each excludeQuestions}}
+- {{{this}}}
+{{/each}}
+{{/if}}
+
+Output the questions in JSON format, including the question text, options, correct answer, and a brief explanation for each question. Make sure that the correct answer is one of the options provided. Explanations are optional.
 
 Example:
 {

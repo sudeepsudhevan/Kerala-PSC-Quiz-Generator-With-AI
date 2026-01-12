@@ -25,7 +25,7 @@ const formSchema = z.object({
 });
 
 type QuizSetupProps = {
-  onQuizStart: (questions: Question[]) => void;
+  onQuizStart: (questions: Question[], topic: string) => void;
 };
 
 export default function QuizSetup({ onQuizStart }: QuizSetupProps) {
@@ -46,7 +46,7 @@ export default function QuizSetup({ onQuizStart }: QuizSetupProps) {
     try {
       const result = await getQuestionsForTopic(values.topic, values.numQuestions);
       if (result.questions && result.questions.length > 0) {
-        onQuizStart(result.questions);
+        onQuizStart(result.questions, values.topic);
       } else {
         toast({
           variant: 'destructive',

@@ -16,6 +16,7 @@ export default function Home() {
   const [quizState, setQuizState] = useState<'setup' | 'playing' | 'finished'>('setup');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [score, setScore] = useState(0);
+  const [currentTopic, setCurrentTopic] = useState('');
 
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
@@ -26,13 +27,14 @@ export default function Home() {
     }
   }, [user, isUserLoading, auth]);
 
-  const handleQuizStart = (generatedQuestions: Question[]) => {
+  const handleQuizStart = (generatedQuestions: Question[], topic: string) => {
     setQuestions(generatedQuestions);
     setScore(0);
+    setCurrentTopic(topic);
     setQuizState('playing');
   };
 
-  const handleQuizFinish = (finalScore: number, userAnswers: (string | null)[]) => {
+  const handleQuizFinish = (finalScore: number) => {
     setScore(finalScore);
     setQuizState('finished');
   };
@@ -41,6 +43,7 @@ export default function Home() {
     setQuizState('setup');
     setQuestions([]);
     setScore(0);
+    setCurrentTopic('');
   };
 
   const renderContent = () => {
@@ -67,7 +70,7 @@ export default function Home() {
       return <QuizSetup onQuizStart={handleQuizStart} />;
     }
     if (quizState === 'playing' && questions.length > 0) {
-      return <QuizView questions={questions} onQuizFinish={handleQuizFinish} />;
+      return <QuizView questions={questions} topic={currentTopic} onQuizFinish={handleQuizFinish} />;
     }
     if (quizState === 'finished') {
       return <QuizSummary score={score} total={questions.length} onRestart={handleRestart} />;

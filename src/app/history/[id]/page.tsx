@@ -3,7 +3,7 @@
 import { doc } from 'firebase/firestore';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { BookOpenCheck, CheckCircle2, Home, XCircle } from 'lucide-react';
+import { BookOpenCheck, CheckCircle2, Home, XCircle, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
@@ -63,9 +63,15 @@ export default function AttemptDetailPage() {
         <Card>
             <CardHeader>
                 <CardTitle className="font-headline text-3xl">Quiz Review</CardTitle>
-                <CardDescription>
-                    Taken on {format(new Date(attempt.completedAt), "MMMM d, yyyy 'at' h:mm a")}
-                </CardDescription>
+                <div className="flex justify-between items-center text-muted-foreground pt-2">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    <span>{attempt.topic}</span>
+                  </div>
+                  <span>
+                    {format(new Date(attempt.completedAt), "MMMM d, yyyy 'at' h:mm a")}
+                  </span>
+                </div>
             </CardHeader>
             <CardContent>
                 <div className="flex items-center justify-between rounded-lg border p-4">

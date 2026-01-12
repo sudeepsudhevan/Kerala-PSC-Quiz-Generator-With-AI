@@ -52,6 +52,25 @@ export interface UserHookResult { // Renamed from UserAuthHookResult for consist
 // React Context
 export const FirebaseContext = createContext<FirebaseContextState | undefined>(undefined);
 
+// Axios interceptor to attach the token
+const applyAuthInterceptor = (auth: Auth) => {
+  // This is a placeholder for where you would configure axios or fetch.
+  // Since we don't have axios, we'll demonstrate the concept with fetch.
+  // This requires monkey-patching fetch, which is generally not recommended
+  // for production code without careful consideration.
+  const originalFetch = window.fetch;
+  window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const user = auth.currentUser;
+    if (user) {
+      const token = await user.getIdToken();
+      const headers = new Headers(init?.headers);
+      headers.set('Authorization', `Bearer ${token}`);
+      init = { ...init, headers };
+    }
+    return originalFetch(input, init);
+  };
+};
+
 /**
  * FirebaseProvider manages and provides Firebase services and user authentication state.
  */
@@ -73,6 +92,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth service not provided.") });
       return;
     }
+
+    applyAuthInterceptor(auth); // Apply the interceptor
 
     setUserAuthState({ user: null, isUserLoading: true, userError: null }); // Reset on auth instance change
 

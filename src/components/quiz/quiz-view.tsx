@@ -18,10 +18,11 @@ import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 type QuizViewProps = {
   questions: Question[];
+  topic: string;
   onQuizFinish: (score: number, userAnswers: UserAnswer[]) => void;
 };
 
-export default function QuizView({ questions, onQuizFinish }: QuizViewProps) {
+export default function QuizView({ questions, topic, onQuizFinish }: QuizViewProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -38,7 +39,8 @@ export default function QuizView({ questions, onQuizFinish }: QuizViewProps) {
     if (!selectedOption) return;
 
     const newAnswers = [...userAnswers];
-    newAnswers[currentQuestionIndex] = selectedOption;
+    const selectedAnswerIndex = currentQuestion.options.indexOf(selectedOption);
+    newAnswers[currentQuestionIndex] = selectedOption; // Storing the string value of the answer
     setUserAnswers(newAnswers);
 
     setIsSubmitted(true);
@@ -48,6 +50,12 @@ export default function QuizView({ questions, onQuizFinish }: QuizViewProps) {
   };
 
   const handleNext = async () => {
+    // We need to capture the score and answers *before* handleNext potentially finishes the quiz
+    const finalScore = selectedOption === currentQuestion.correctAnswer ? score + 1 : score;
+    const finalUserAnswers = [...userAnswers];
+    finalUserAnswers[currentQuestionIndex] = selectedOption;
+
+
     if (currentQuestionIndex < questions.length - 1) {
       setIsSubmitted(false);
       setSelectedOption(null);
@@ -55,16 +63,16 @@ export default function QuizView({ questions, onQuizFinish }: QuizViewProps) {
     } else {
       // Last question, finish the quiz and save
       if (user && firestore) {
-        try {
-          const attemptsCollection = collection(firestore, 'users', user.uid, 'quizAttempts');
           const quizAttempt = {
             userId: user.uid,
+            topic: topic,
             questions: questions,
-            userAnswers: userAnswers,
-            score: score,
+            userAnswers: finalUserAnswers,
+            score: finalScore,
             total: questions.length,
             completedAt: new Date().toISOString(),
           };
+          const attemptsCollection = collection(firestore, 'users', user.uid, 'quizAttempts');
           // Not awaiting this to avoid blocking UI
           addDocumentNonBlocking(attemptsCollection, quizAttempt);
 
@@ -72,16 +80,8 @@ export default function QuizView({ questions, onQuizFinish }: QuizViewProps) {
             title: 'Quiz Saved!',
             description: 'Your quiz attempt has been saved to your history.',
           });
-        } catch (error) {
-          console.error('Error saving quiz attempt:', error);
-          toast({
-            variant: 'destructive',
-            title: 'Save Failed',
-            description: 'Could not save your quiz attempt.',
-          });
-        }
       }
-      onQuizFinish(score, userAnswers);
+      onQuizFinish(finalScore, finalUserAnswers);
     }
   };
 
