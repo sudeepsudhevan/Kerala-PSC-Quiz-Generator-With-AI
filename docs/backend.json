@@ -1,0 +1,177 @@
+{
+  "entities": {
+    "Question": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Question",
+      "type": "object",
+      "description": "Represents a question in the Kerala PSC exam preparation app.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the question."
+        },
+        "questionText": {
+          "type": "string",
+          "description": "The text of the question."
+        },
+        "options": {
+          "type": "array",
+          "description": "Array of possible answer options for the question.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "correctAnswerIndex": {
+          "type": "number",
+          "description": "The index of the correct answer in the options array."
+        },
+        "explanation": {
+          "type": "string",
+          "description": "A detailed explanation of the correct answer."
+        },
+        "syllabusArea": {
+          "type": "string",
+          "description": "The area of the Kerala PSC syllabus the question relates to."
+        }
+      },
+      "required": [
+        "id",
+        "questionText",
+        "options",
+        "correctAnswerIndex",
+        "explanation",
+        "syllabusArea"
+      ]
+    },
+    "UserAnswer": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserAnswer",
+      "type": "object",
+      "description": "Represents a user's answer to a specific question.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user answer."
+        },
+        "questionId": {
+          "type": "string",
+          "description": "Reference to the Question answered. (Relationship: Question 1:N UserAnswer)"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who answered. (Relationship: User 1:N UserAnswer)"
+        },
+        "selectedAnswerIndex": {
+          "type": "number",
+          "description": "The index of the answer option selected by the user."
+        },
+        "isCorrect": {
+          "type": "boolean",
+          "description": "Indicates whether the user's answer was correct."
+        },
+        "answeredAt": {
+          "type": "string",
+          "description": "Timestamp of when the question was answered.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "questionId",
+        "userId",
+        "selectedAnswerIndex",
+        "isCorrect",
+        "answeredAt"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's display name."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Only the authenticated user can read/write their own profile.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/questions/{questionId}",
+        "definition": {
+          "entityName": "Question",
+          "schema": {
+            "$ref": "#/backend/entities/Question"
+          },
+          "description": "Stores all questions. Read access should be public, write access restricted to admins (not defined in requirements but assumed).",
+          "params": [
+            {
+              "name": "questionId",
+              "description": "The unique identifier of the question."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/userAnswers/{userAnswerId}",
+        "definition": {
+          "entityName": "UserAnswer",
+          "schema": {
+            "$ref": "#/backend/entities/UserAnswer"
+          },
+          "description": "Stores user answers. Only the authenticated user can read/write their answers.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "userAnswerId",
+              "description": "The unique identifier of the user answer."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to optimize for security, scalability, and debuggability, adhering to the principles of Authorization Independence and Structural Segregation. User data is stored under `/users/{userId}` for private user data. Questions are stored in a flat `/questions` collection.  User answers are nested under the user's document at `/users/{userId}/userAnswers/{userAnswerId}`. This structure allows easy querying of a user's answers and maintains clear ownership.  Because `userAnswers` are nested under `/users/{userId}`, authorization is simple - only the authenticated user can read/write their answers.  There are no collaborative features, therefore Membership Maps are not needed. This design ensures authorization independence because access control is based on the user's ID and the path structure. QAPs are supported because listing user answers is restricted to the authenticated user via path-based rules."
+  }
+}

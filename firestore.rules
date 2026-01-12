@@ -1,0 +1,93 @@
+/**
+ * Core Philosophy: This ruleset enforces a strict user-ownership model where a user's private data,
+ * such as their profile and answers, is completely isolated and accessible only to them. This is achieved
+ * by nesting user-specific data within a `/users/{userId}` document path.
+ *
+ * Data Structure:
+ * - /users/{userId}: Contains a user's public profile. Only the user themselves can modify it.
+ * - /users/{userId}/userAnswers/{userAnswerId}: Contains a user's private answers to questions. Access is
+ *   strictly limited to the user who owns the data tree.
+ * - /questions/{questionId}: A top-level collection of questions, which are considered public and readable
+ *   by any authenticated user.
+ *
+ * Key Security Decisions:
+ * - Strict Ownership: All documents and subcollections under `/users/{userId}` are only accessible by the
+ *   authenticated user whose UID matches `{userId}`.
+ * - No User Enumeration: Listing the top-level `/users` collection is explicitly disallowed to protect user privacy.
+ * - Read-Only Public Data: The `/questions` collection is readable by any signed-in user but is locked down
+ *   from all client-side writes. An admin role or backend function would be required to add or modify questions,
+ *   which follows the principle of least privilege.
+ *
+ * Denormalization for Authorization: The data structure is designed for efficient authorization. By nesting
+ * `userAnswers` under the `users` collection, ownership is determined by the document path, eliminating the need
+ * for costly `get()` calls to other documents to verify permissions.
+ *
+ * Structural Segregation: User-private data (`/users/{userId}/userAnswers`) is structurally separated from
+ * globally-readable data (`/questions`). This ensures that list queries on public data cannot accidentally
+ * expose private information and simplifies the rules required for each collection.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for reusable logic
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    // Ensures a document exists before allowing an update or delete.
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Manages user profile documents.
+     * @path /users/{userId}
+     * @allow (create) An authenticated user can create their own user profile document. `auth.uid: 'user_abc', path: '/users/user_abc'`.
+     * @deny (list) An authenticated user cannot list all documents in the `/users` collection. `auth.uid: 'user_abc', path: '/users'`.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Manages a user's answers to questions.
+       * @path /users/{userId}/userAnswers/{userAnswerId}
+       * @allow (create) An authenticated user can create an answer document within their own `userAnswers` subcollection. `auth.uid: 'user_abc', path: '/users/user_abc/userAnswers/answer_123'`.
+       * @deny (get) An authenticated user cannot read answers belonging to another user. `auth.uid: 'user_abc', path: '/users/user_xyz/userAnswers/answer_456'`.
+       * @principle Enforces strict data ownership within a user-specific subcollection.
+       */
+      match /userAnswers/{userAnswerId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.id;
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+
+    /**
+     * @description Manages the global collection of questions.
+     * @path /questions/{questionId}
+     * @allow (get, list) Any authenticated user can read or list the questions. `auth.uid: 'user_abc', path: '/questions/q_123'`.
+     * @deny (create, update, delete) No user, authenticated or not, can write to the questions collection from the client. `auth.uid: 'user_abc', path: '/questions/q_123'`.
+     * @principle Establishes a public, read-only collection. Client-side writes are denied to protect data integrity, assuming content is managed by a trusted backend or admin SDK.
+     */
+    match /questions/{questionId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      // CRITICAL: Cannot implement owner-only or admin writes as specified in the schema description.
+      // The 'Question' entity is missing an 'ownerId' field, and no admin role system is defined.
+      // Therefore, all client-side writes are disabled to ensure data integrity.
+      allow create: if false; // TODO: Implement admin-only creation logic via custom claims or a separate roles collection.
+      allow update: if false; // TODO: Implement admin-only update logic.
+      allow delete: if false; // TODO: Implement admin-only delete logic.
+    }
+  }
+}
