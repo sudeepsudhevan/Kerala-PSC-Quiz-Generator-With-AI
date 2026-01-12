@@ -4,11 +4,11 @@ import { generateKeralaPscQuestions } from '@/ai/flows/generate-kerala-psc-quest
 import type { GenerateKeralaPscQuestionsOutput } from '@/ai/flows/generate-kerala-psc-questions';
 
 export async function getQuestionsForTopic(
-  topic: string
+  topic: string,
+  numQuestions: number
 ): Promise<GenerateKeralaPscQuestionsOutput> {
   try {
-    // We use 10 questions for a better user experience, as 100 can be slow.
-    const result = await generateKeralaPscQuestions({ topic, numQuestions: 10 });
+    const result = await generateKeralaPscQuestions({ topic, numQuestions });
     return result;
   } catch (error) {
     console.error('Error generating questions:', error);

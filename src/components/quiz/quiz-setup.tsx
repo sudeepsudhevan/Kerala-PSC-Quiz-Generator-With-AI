@@ -8,7 +8,7 @@ import { Check, ChevronsUpDown } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useToast } from '@/hooks/use-toast';
@@ -17,9 +17,11 @@ import type { Question } from '@/lib/types';
 import { Loader } from '@/components/loader';
 import { cn } from '@/lib/utils';
 import { PSC_TOPICS } from '@/lib/psc-topics';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const formSchema = z.object({
   topic: z.string().min(3, 'Topic must be at least 3 characters long.'),
+  numQuestions: z.coerce.number().int().min(1),
 });
 
 type QuizSetupProps = {
@@ -35,13 +37,14 @@ export default function QuizSetup({ onQuizStart }: QuizSetupProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       topic: 'History of Kerala',
+      numQuestions: 10,
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsGenerating(true);
     try {
-      const result = await getQuestionsForTopic(values.topic);
+      const result = await getQuestionsForTopic(values.topic, values.numQuestions);
       if (result.questions && result.questions.length > 0) {
         onQuizStart(result.questions);
       } else {
@@ -70,9 +73,9 @@ export default function QuizSetup({ onQuizStart }: QuizSetupProps) {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardHeader>
               <CardTitle className="font-headline text-3xl">Generate Your Quiz</CardTitle>
-              <CardDescription>Select or type a topic from the Kerala PSC syllabus to start.</CardDescription>
+              <CardDescription>Select a topic and number of questions to start.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
               <FormField
                 control={form.control}
                 name="topic"
@@ -128,6 +131,38 @@ export default function QuizSetup({ onQuizStart }: QuizSetupProps) {
                         </Command>
                       </PopoverContent>
                     </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="numQuestions"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Number of Questions</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={String(field.value)}
+                        className="flex space-x-2 md:space-x-4"
+                      >
+                        {[10, 25, 50].map(num => (
+                          <FormItem key={num} className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <Button
+                                type="button"
+                                variant={field.value === num ? 'default' : 'outline'}
+                                onClick={() => field.onChange(num)}
+                                className="w-20"
+                              >
+                                {num}
+                              </Button>
+                            </FormControl>
+                          </FormItem>
+                        ))}
+                      </RadioGroup>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
