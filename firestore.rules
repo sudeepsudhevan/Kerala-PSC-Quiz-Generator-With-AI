@@ -5,7 +5,7 @@
  *
  * Data Structure:
  * - /users/{userId}: Contains a user's public profile. Only the user themselves can modify it.
- * - /users/{userId}/userAnswers/{userAnswerId}: Contains a user's private answers to questions. Access is
+ * - /users/{userId}/quizAttempts/{quizAttemptId}: Contains a user's private quiz attempts. Access is
  *   strictly limited to the user who owns the data tree.
  * - /questions/{questionId}: A top-level collection of questions, which are considered public and readable
  *   by any authenticated user.
@@ -19,10 +19,10 @@
  *   which follows the principle of least privilege.
  *
  * Denormalization for Authorization: The data structure is designed for efficient authorization. By nesting
- * `userAnswers` under the `users` collection, ownership is determined by the document path, eliminating the need
+ * `quizAttempts` under the `users` collection, ownership is determined by the document path, eliminating the need
  * for costly `get()` calls to other documents to verify permissions.
  *
- * Structural Segregation: User-private data (`/users/{userId}/userAnswers`) is structurally separated from
+ * Structural Segregation: User-private data (`/users/{userId}/quizAttempts`) is structurally separated from
  * globally-readable data (`/questions`). This ensures that list queries on public data cannot accidentally
  * expose private information and simplifies the rules required for each collection.
  */
@@ -63,7 +63,7 @@ service cloud.firestore {
        * @deny (get) An authenticated user cannot read answers belonging to another user. `auth.uid: 'user_abc', path: '/users/user_xyz/userAnswers/answer_456'`.
        * @principle Enforces strict data ownership within a user-specific subcollection.
        */
-      match /userAnswers/{userAnswerId} {
+      match /quizAttempts/{quizAttemptId} {
         allow get: if isOwner(userId);
         allow list: if isOwner(userId);
         allow create: if isOwner(userId) && request.resource.data.userId == userId;

@@ -1,16 +1,63 @@
 {
   "entities": {
+    "QuizAttempt": {
+      "title": "Quiz Attempt",
+      "type": "object",
+      "description": "Represents a single attempt at a quiz by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the quiz attempt."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who took the quiz."
+        },
+        "questions": {
+          "type": "array",
+          "description": "The list of questions in the quiz.",
+          "items": {
+            "$ref": "#/backend/entities/Question"
+          }
+        },
+        "userAnswers": {
+          "type": "array",
+          "description": "The answers provided by the user.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "score": {
+          "type": "number",
+          "description": "The final score achieved by the user."
+        },
+        "total": {
+          "type": "number",
+          "description": "The total number of questions in the quiz."
+        },
+        "completedAt": {
+          "type": "string",
+          "description": "Timestamp of when the quiz was completed.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "questions",
+        "userAnswers",
+        "score",
+        "total",
+        "completedAt"
+      ]
+    },
     "Question": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Question",
       "type": "object",
       "description": "Represents a question in the Kerala PSC exam preparation app.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the question."
-        },
-        "questionText": {
+        "question": {
           "type": "string",
           "description": "The text of the question."
         },
@@ -21,26 +68,19 @@
             "type": "string"
           }
         },
-        "correctAnswerIndex": {
-          "type": "number",
-          "description": "The index of the correct answer in the options array."
+        "correctAnswer": {
+          "type": "string",
+          "description": "The correct answer."
         },
         "explanation": {
           "type": "string",
           "description": "A detailed explanation of the correct answer."
-        },
-        "syllabusArea": {
-          "type": "string",
-          "description": "The area of the Kerala PSC syllabus the question relates to."
         }
       },
       "required": [
-        "id",
-        "questionText",
+        "question",
         "options",
-        "correctAnswerIndex",
-        "explanation",
-        "syllabusArea"
+        "correctAnswer"
       ]
     },
     "UserAnswer": {
@@ -106,8 +146,7 @@
       },
       "required": [
         "id",
-        "email",
-        "name"
+        "email"
       ]
     }
   },
@@ -152,26 +191,25 @@
         }
       },
       {
-        "path": "/users/{userId}/userAnswers/{userAnswerId}",
+        "path": "/users/{userId}/quizAttempts/{quizAttemptId}",
         "definition": {
-          "entityName": "UserAnswer",
+          "entityName": "QuizAttempt",
           "schema": {
-            "$ref": "#/backend/entities/UserAnswer"
+            "$ref": "#/backend/entities/QuizAttempt"
           },
-          "description": "Stores user answers. Only the authenticated user can read/write their answers.",
+          "description": "Stores a user's quiz attempts. Only the user can read/write their own attempts.",
           "params": [
             {
               "name": "userId",
               "description": "The unique identifier of the user."
             },
             {
-              "name": "userAnswerId",
-              "description": "The unique identifier of the user answer."
+              "name": "quizAttemptId",
+              "description": "The unique identifier of the quiz attempt."
             }
           ]
         }
       }
-    ],
-    "reasoning": "The Firestore structure is designed to optimize for security, scalability, and debuggability, adhering to the principles of Authorization Independence and Structural Segregation. User data is stored under `/users/{userId}` for private user data. Questions are stored in a flat `/questions` collection.  User answers are nested under the user's document at `/users/{userId}/userAnswers/{userAnswerId}`. This structure allows easy querying of a user's answers and maintains clear ownership.  Because `userAnswers` are nested under `/users/{userId}`, authorization is simple - only the authenticated user can read/write their answers.  There are no collaborative features, therefore Membership Maps are not needed. This design ensures authorization independence because access control is based on the user's ID and the path structure. QAPs are supported because listing user answers is restricted to the authenticated user via path-based rules."
+    ]
   }
 }
