@@ -1,3 +1,4 @@
+
 export const PSC_TOPICS = [
   { label: 'Kerala History', value: 'Kerala History' },
   { label: 'Kerala Renaissance Leaders', value: 'Kerala Renaissance leaders' },
@@ -33,7 +34,7 @@ export const PSC_TOPICS = [
   { label: 'Statutory & Quasi-judicial Bodies', value: 'Statutory and Quasi-judicial Bodies in India' },
   { label: 'Indian Economy Post-Reform', value: 'Indian Economy post-1991 reform' },
   { label: 'NITI Aayog', value: 'NITI Aayog' },
-  { label: 'Five-Year Plans of India', value 'Five-Year Plans of India' },
+  { label: 'Five-Year Plans of India', value: 'Five-Year Plans of India' },
   { label: 'Sectoral Composition of Indian Economy', value: 'Sectoral Composition of Indian Economy' },
   { label: 'Banking and Finance in India', value: 'Banking and Finance in India' },
   { label: 'Goods and Services Tax (GST)', value: 'Goods and Services Tax (GST)' },
